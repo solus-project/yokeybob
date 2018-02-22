@@ -11,6 +11,7 @@
 
 #define _GNU_SOURCE
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -45,6 +46,52 @@ int64_t yb_available_memory(void)
 }
 
 /**
+ * Determine if swap is available on this system by consulting /proc/swaps
+ *
+ * We don't really parse /proc/swaps, instead we just make sure we read more
+ * than one line from the file (as the header always exists) and assume that
+ * the kernel isn't messing us around with invalid entries. It is not our job
+ * to validate that swap works, but that it is attached.
+ */
+bool yb_has_swap(void)
+{
+        FILE *fp = NULL;
+        char *bfr = NULL;
+        size_t n = 0;
+        ssize_t read = 0;
+        int line_count = 0;
+
+        fp = fopen("/proc/swaps", "r");
+        if (!fp) {
+                return false;
+        }
+
+        while ((read = getline(&bfr, &n, fp)) > 0) {
+                if (read < 1) {
+                        goto next_line;
+                }
+
+                ++line_count;
+        next_line:
+                free(bfr);
+                bfr = NULL;
+
+                /* No sense in more allocs here */
+                if (line_count > 1) {
+                        break;
+                }
+        }
+
+        if (bfr) {
+                free(bfr);
+        }
+
+        fclose(fp);
+
+        return line_count > 1;
+}
+
+/**
  * For now this is our testing entry into yokeybob whilst we sort out some
  * basic library functionality.
  */
@@ -53,6 +100,9 @@ int main(int argc, char **argv)
         int64_t avail_memory = yb_available_memory();
         if (avail_memory > 0) {
                 printf("Avail memory: %ld\n", avail_memory);
+        }
+        if (yb_has_swap()) {
+                printf("Have swap!\n");
         }
 
         fputs("Not yet implemented\n", stderr);
