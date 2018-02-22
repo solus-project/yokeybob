@@ -11,87 +11,10 @@
 
 #define _GNU_SOURCE
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#define MIB (1024 * 1024)
-
-/**
- * Return the available memory in mib
- */
-int64_t yb_available_memory(void)
-{
-        long page_size = -1;
-        long page_count = -1;
-
-        /* Grab the page size */
-#ifdef _SC_PAGESIZE
-        page_size = sysconf(_SC_PAGESIZE);
-#endif
-        if (page_size == -1) {
-#ifdef PAGESIZE
-                page_size = sysconf(PAGESIZE);
-#else
-                return -1;
-#endif
-        }
-
-        /* If for some reason we can't grab this, return -1 */
-        page_count = sysconf(_SC_PHYS_PAGES);
-        if (page_count == -1) {
-                return -1;
-        }
-
-        return (page_count * page_size) / MIB;
-}
-
-/**
- * Determine if swap is available on this system by consulting /proc/swaps
- *
- * We don't really parse /proc/swaps, instead we just make sure we read more
- * than one line from the file (as the header always exists) and assume that
- * the kernel isn't messing us around with invalid entries. It is not our job
- * to validate that swap works, but that it is attached.
- */
-bool yb_has_swap(void)
-{
-        FILE *fp = NULL;
-        char *bfr = NULL;
-        size_t n = 0;
-        ssize_t read = 0;
-        int line_count = 0;
-
-        fp = fopen("/proc/swaps", "r");
-        if (!fp) {
-                return false;
-        }
-
-        while ((read = getline(&bfr, &n, fp)) > 0) {
-                if (read < 1) {
-                        goto next_line;
-                }
-
-                ++line_count;
-        next_line:
-                free(bfr);
-                bfr = NULL;
-
-                /* No sense in more allocs here */
-                if (line_count > 1) {
-                        break;
-                }
-        }
-
-        if (bfr) {
-                free(bfr);
-        }
-
-        fclose(fp);
-
-        return line_count > 1;
-}
+#include "topology.h"
 
 /**
  * For now this is our testing entry into yokeybob whilst we sort out some
@@ -99,12 +22,17 @@ bool yb_has_swap(void)
  */
 int main(int argc, char **argv)
 {
-        int64_t avail_memory = yb_available_memory();
-        if (avail_memory > 0) {
-                printf("Avail memory: %ld\n", avail_memory);
+        YbTopology top = { 0 };
+        if (!yb_topology_init(&top)) {
+                return EXIT_FAILURE;
         }
-        if (yb_has_swap()) {
-                printf("Have swap!\n");
+
+        if (top.memory.mem_mib > 0) {
+                printf("Avail memory: %ld\n", top.memory.mem_mib);
+        }
+
+        if (top.memory.swap_avail) {
+                fputs("Have swap!\n", stdout);
         }
 
         fputs("Not yet implemented\n", stderr);
