@@ -38,6 +38,11 @@ typedef struct YbTopology {
  */
 bool yb_topology_init(YbTopology *top);
 
+/**
+ * Return the recommended swappiness value for this topology
+ */
+int8_t yb_topology_get_swappiness(YbTopology *top);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

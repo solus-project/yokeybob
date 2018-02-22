@@ -35,6 +35,8 @@ int main(int argc, char **argv)
                 fputs("Have swap!\n", stdout);
         }
 
+        printf("Recommended swappiness: %d\n", yb_topology_get_swappiness(&top));
+
         fputs("Not yet implemented\n", stderr);
         return EXIT_FAILURE;
 }

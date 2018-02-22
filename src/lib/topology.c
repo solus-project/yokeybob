@@ -20,6 +20,11 @@
 #define MIB (1024 * 1024)
 
 /**
+ * Default swappiness value for no-swap systems
+ */
+#define YB_DEFAULT_SWAPPINESS 10
+
+/**
  * Return the available memory in mib
  */
 static int64_t yb_available_memory(void)
@@ -103,6 +108,31 @@ bool yb_topology_init(YbTopology *self)
         self->memory.swap_avail = yb_has_swap();
 
         return true;
+}
+
+int8_t yb_topology_get_swappiness(YbTopology *self)
+{
+        if (!self->memory.swap_avail) {
+                return YB_DEFAULT_SWAPPINESS;
+        }
+
+        /* Around 8GB memory, low swappiness */
+        if (self->memory.mem_mib >= 8192) {
+                return YB_DEFAULT_SWAPPINESS;
+        }
+
+        /* More than 5gb, go for 20 swappiness */
+        if (self->memory.mem_mib >= 5120) {
+                return 20;
+        }
+
+        /* Floating around 3+/4gb & IGP */
+        if (self->memory.mem_mib >= 3000) {
+                return 30;
+        }
+
+        /* Extremely limited, be bolder with swappiness */
+        return 40;
 }
 
 /*
