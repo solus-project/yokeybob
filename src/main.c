@@ -27,7 +27,9 @@ int64_t yb_available_memory(void)
         long page_count = -1;
 
         /* Grab the page size */
+#ifdef _SC_PAGESIZE
         page_size = sysconf(_SC_PAGESIZE);
+#endif
         if (page_size == -1) {
 #ifdef PAGESIZE
                 page_size = sysconf(PAGESIZE);
