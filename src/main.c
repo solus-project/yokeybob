@@ -13,6 +13,36 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#define MIB (1024 * 1024)
+
+/**
+ * Return the available memory in mib
+ */
+int64_t yb_available_memory(void)
+{
+        long page_size = -1;
+        long page_count = -1;
+
+        /* Grab the page size */
+        page_size = sysconf(_SC_PAGESIZE);
+        if (page_size == -1) {
+#ifdef PAGESIZE
+                page_size = sysconf(PAGESIZE);
+#else
+                return -1;
+#endif
+        }
+
+        /* If for some reason we can't grab this, return -1 */
+        page_count = sysconf(_SC_PHYS_PAGES);
+        if (page_count == -1) {
+                return -1;
+        }
+
+        return (page_count * page_size) / MIB;
+}
 
 /**
  * For now this is our testing entry into yokeybob whilst we sort out some
@@ -20,6 +50,11 @@
  */
 int main(int argc, char **argv)
 {
+        int64_t avail_memory = yb_available_memory();
+        if (avail_memory > 0) {
+                printf("Avail memory: %ld\n", avail_memory);
+        }
+
         fputs("Not yet implemented\n", stderr);
         return EXIT_FAILURE;
 }
