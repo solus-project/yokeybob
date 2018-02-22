@@ -17,6 +17,24 @@
 #include "topology.h"
 
 /**
+ * TODO: Actually write this stuff to the kernel
+ */
+static bool yb_apply_memory_constraints(YbTopology *top)
+{
+        if (top->memory.mem_mib > 0) {
+                printf("Avail memory: %ld\n", top->memory.mem_mib);
+        }
+
+        if (top->memory.swap_avail) {
+                fputs("Have swap!\n", stdout);
+        }
+
+        printf("Recommended swappiness: %d\n", yb_topology_get_swappiness(top));
+
+        return true;
+}
+
+/**
  * For now this is our testing entry into yokeybob whilst we sort out some
  * basic library functionality.
  */
@@ -27,18 +45,7 @@ int main(int argc, char **argv)
                 return EXIT_FAILURE;
         }
 
-        if (top.memory.mem_mib > 0) {
-                printf("Avail memory: %ld\n", top.memory.mem_mib);
-        }
-
-        if (top.memory.swap_avail) {
-                fputs("Have swap!\n", stdout);
-        }
-
-        printf("Recommended swappiness: %d\n", yb_topology_get_swappiness(&top));
-
-        fputs("Not yet implemented\n", stderr);
-        return EXIT_FAILURE;
+        return yb_apply_memory_constraints(&top) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 /*
