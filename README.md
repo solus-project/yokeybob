@@ -7,9 +7,9 @@ installations based on the topology.
 
 THIS PROJECT IS A WORK IN PROGRESS.
 
-`yokeybob` is a [Solus project](https://solus-project.com/)
+`yokeybob` is a [Solus project](https://getsol.us/)
 
-![logo](https://build.solus-project.com/logo.png)
+![logo](https://build.getsol.us/logo.png)
 
 ## Authors
 
